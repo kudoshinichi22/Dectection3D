@@ -1,0 +1,10 @@
+{
+  "description": "Sample calibration placeholder. Replace with real calibration before claiming metric 3D.",
+  "camera_matrix": [
+    [1000.0, 0.0, 640.0],
+    [0.0, 1000.0, 360.0],
+    [0.0, 0.0, 1.0]
+  ],
+  "distortion_coefficients": [0.0, 0.0, 0.0, 0.0, 0.0],
+  "units": "pixels"
+}

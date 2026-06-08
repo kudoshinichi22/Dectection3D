@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO Object Detection</title>
+    <link rel="stylesheet" href="style.css?v=20260608-3">
+</head>
+
+<body>
+    <main class="app-shell">
+        <section class="toolbar">
+            <div>
+                <h1>YOLO Object Detection</h1>
+                <div id="modelStatus" class="model-status">Đang kiểm tra model...</div>
+            </div>
+
+            <div class="controls">
+                <div class="mode-row" aria-label="Nguồn dữ liệu">
+                    <label><input type="radio" name="sourceMode" value="image" checked> Ảnh</label>
+                    <label><input type="radio" name="sourceMode" value="video"> Video</label>
+                    <label><input type="radio" name="sourceMode" value="camera"> Camera</label>
+                </div>
+
+                <div class="input-row">
+                    <input type="file" id="imageInput" accept="image/*">
+                    <input type="file" id="videoInput" accept="video/*" hidden>
+                    <button id="detectBtn" type="button">Detection</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="workspace">
+            <section class="media-panel">
+                <div class="panel-heading">
+                    <h2 id="mediaTitle">Ảnh phát hiện</h2>
+                    <span id="runStatus">Sẵn sàng</span>
+                </div>
+                <div class="media-stage">
+                    <img id="previewImage" alt="Preview ảnh" hidden>
+                    <video id="previewVideo" controls muted playsinline hidden></video>
+                    <canvas id="detectionCanvas"></canvas>
+                </div>
+            </section>
+
+            <aside class="result-panel">
+                <h2>Kết quả</h2>
+                <div id="summaryTotal" class="summary-total">Tổng số vật thể: 0</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Vật thể</th>
+                            <th>Xuất hiện</th>
+                        </tr>
+                    </thead>
+                    <tbody id="objectTableBody">
+                        <tr><td colspan="3">Chưa có dữ liệu</td></tr>
+                    </tbody>
+                </table>
+
+                <h2>Chi tiết</h2>
+                <div id="objectDetails" class="object-details">
+                    <p>Chưa có chi tiết vật thể.</p>
+                </div>
+            </aside>
+        </section>
+    </main>
+
+    <script src="app.js?v=20260608-3"></script>
+</body>
+
+</html>
