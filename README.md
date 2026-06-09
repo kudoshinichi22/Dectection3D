@@ -4,19 +4,19 @@ Du an nay hien da duoc dua ve ban web + backend YOLO thuan, khong con tich hop U
 
 He thong gom:
 
-- Backend FastAPI xu ly anh, video va camera.
+- Backend FastAPI xu ly anh va camera.
 - YOLO object detection.
 - YOLO pose estimation cho nguoi neu model pose kha dung.
 - Pseudo-3D tu bbox/keypoint de hien thi chi tiet tren web.
 - Tracking ID don gian theo frame.
-- Frontend HTML/CSS/JavaScript de upload anh/video, mo camera va ve overlay.
+- Frontend HTML/CSS/JavaScript de upload anh, mo camera va ve overlay.
 - Script kiem tra dataset va train custom YOLO model.
 
 ## Cau Truc Chinh
 
 ```text
 BE/
-  main.py                 FastAPI endpoints cho image/video/camera
+  main.py                 FastAPI endpoints cho image/camera
   detector.py             Load YOLO detection model
   pose_estimator.py       YOLO pose estimation
   pose_3d.py              Pseudo-3D tu bbox/keypoint
@@ -95,16 +95,12 @@ FE/index.html
 | `GET` | `/` | Kiem tra backend dang chay. |
 | `GET` | `/model/status` | Tra trang thai detection model va pose model. |
 | `POST` | `/detect/image` | Upload anh va tra detection JSON. |
-| `POST` | `/detect/video/stream` | Upload video va stream ket qua tung frame bang NDJSON. |
-| `POST` | `/detect/video` | Upload video, tao video output da ve bbox. |
 | `GET` | `/camera/frame` | Doc 1 frame tu webcam backend va detect. |
 
 ## File Sinh Ra Khi Chay
 
 | Duong dan | Y nghia |
 | --- | --- |
-| `BE/uploaded_videos/` | Video nguoi dung upload qua API. |
-| `BE/output_videos/` | Video output da annotate. |
 | `BE/__pycache__/` | Cache Python, co the xoa. |
 | `venv/` | Moi truong ao Python, khong sua thu cong. |
 | `runs/` | Output train YOLO neu co. |

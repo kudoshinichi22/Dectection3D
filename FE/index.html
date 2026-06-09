@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YOLO Object Detection</title>
-    <link rel="stylesheet" href="style.css?v=20260608-3">
+    <link rel="stylesheet" href="style.css?v=20260609-1">
 </head>
 
 <body>
@@ -19,13 +19,11 @@
             <div class="controls">
                 <div class="mode-row" aria-label="Nguồn dữ liệu">
                     <label><input type="radio" name="sourceMode" value="image" checked> Ảnh</label>
-                    <label><input type="radio" name="sourceMode" value="video"> Video</label>
                     <label><input type="radio" name="sourceMode" value="camera"> Camera</label>
                 </div>
 
                 <div class="input-row">
                     <input type="file" id="imageInput" accept="image/*">
-                    <input type="file" id="videoInput" accept="video/*" hidden>
                     <button id="detectBtn" type="button">Detection</button>
                 </div>
             </div>
@@ -68,7 +66,7 @@
         </section>
     </main>
 
-    <script src="app.js?v=20260608-3"></script>
+    <script src="app.js?v=20260609-1"></script>
 </body>
 
 </html>

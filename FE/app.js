@@ -5,12 +5,9 @@ const CAMERA_INTERVAL_MS = 700;
 
 let activeMode = "image";
 let selectedImageFile = null;
-let selectedVideoFile = null;
 let imageObjectUrl = null;
-let videoObjectUrl = null;
 
 let overlayAnimationId = null;
-let videoDetectionRunId = 0;
 
 let cameraStream = null;
 let cameraTimer = null;
@@ -24,7 +21,6 @@ document.addEventListener("submit", event => event.preventDefault());
 
 function init() {
     byId("imageInput").addEventListener("change", onImageSelected);
-    byId("videoInput").addEventListener("change", onVideoSelected);
     byId("detectBtn").addEventListener("click", runDetection);
 
     document.querySelectorAll("input[name='sourceMode']").forEach(input => {
@@ -73,35 +69,29 @@ function switchMode(mode) {
     activeMode = mode;
     stopAllRealtimeWork();
     clearCanvas();
-    resetVideoDetectionState();
     renderAppearanceSummary([]);
     renderObjectDetails([]);
     setStatus("Sẵn sàng");
 
     const imageInput = byId("imageInput");
-    const videoInput = byId("videoInput");
     const image = byId("previewImage");
     const video = byId("previewVideo");
 
     imageInput.hidden = mode !== "image";
-    videoInput.hidden = mode !== "video";
-    image.hidden = mode !== "image";
-    video.hidden = mode === "image";
-    video.controls = mode !== "camera";
-    byId("mediaTitle").textContent = mode === "image" ? "Ảnh phát hiện" : mode === "video" ? "Video phát hiện" : "Camera phát hiện";
+    image.hidden = mode !== "image" || !imageObjectUrl;
+    video.hidden = mode !== "camera";
+    video.controls = false;
+    byId("mediaTitle").textContent = mode === "image" ? "Ảnh phát hiện" : "Camera phát hiện";
 
     if (mode === "image") {
         stopCamera();
         video.pause();
         video.removeAttribute("src");
         video.load();
-        if (imageObjectUrl) image.src = imageObjectUrl;
-    }
-
-    if (mode === "video") {
-        stopCamera();
-        image.hidden = true;
-        showVideoPreview();
+        if (imageObjectUrl) {
+            image.src = imageObjectUrl;
+            image.hidden = false;
+        }
     }
 
     if (mode === "camera") {
@@ -133,43 +123,9 @@ function onImageSelected() {
     setStatus("Đã chọn ảnh");
 }
 
-function onVideoSelected() {
-    const input = byId("videoInput");
-    const video = byId("previewVideo");
-
-    stopAllRealtimeWork();
-    clearCanvas();
-    resetVideoDetectionState();
-    renderAppearanceSummary([]);
-    renderObjectDetails([]);
-
-    selectedVideoFile = input.files?.[0] || null;
-    if (!selectedVideoFile) {
-        videoDetectionRunId += 1;
-        if (videoObjectUrl) URL.revokeObjectURL(videoObjectUrl);
-        videoObjectUrl = null;
-        video.pause();
-        video.removeAttribute("src");
-        video.load();
-        setStatus("Chưa chọn video");
-        return;
-    }
-
-    if (videoObjectUrl) URL.revokeObjectURL(videoObjectUrl);
-    videoObjectUrl = URL.createObjectURL(selectedVideoFile);
-    video.src = videoObjectUrl;
-    video.hidden = false;
-    video.controls = true;
-    video.muted = true;
-    video.load();
-    video.pause();
-    setStatus("Đã chọn video. Bấm Detection để xử lý.");
-}
-
 async function runDetection(event) {
     event?.preventDefault();
     if (activeMode === "image") await detectImage();
-    if (activeMode === "video") await detectVideo();
     if (activeMode === "camera") startCameraDetection();
 }
 
@@ -205,76 +161,6 @@ async function detectImage() {
         alert(`Lỗi detection: ${error.message}`);
     } finally {
         setBusy(button, false);
-    }
-}
-
-async function detectVideo(options = {}) {
-    if (!selectedVideoFile || !videoObjectUrl) {
-        if (!options.silent) alert("Vui lòng chọn video");
-        return;
-    }
-
-    const runId = ++videoDetectionRunId;
-    const button = byId("detectBtn");
-    const video = byId("previewVideo");
-
-    stopOverlayLoop();
-    clearCanvas();
-    resetVideoDetectionState();
-    renderAppearanceSummary([]);
-    renderObjectDetails([]);
-    showVideoPreview();
-    setBusy(button, true);
-    setStatus("Đang detect video trong nền...");
-
-    try {
-        await waitForVideoReady(video, 6000);
-        video.pause();
-
-        const formData = new FormData();
-        formData.append("file", selectedVideoFile);
-        const response = await fetch(`${API_BASE}/detect/video`, {
-            method: "POST",
-            body: formData,
-        });
-        const data = await response.json();
-
-        if (!response.ok || data.success === false || data.error) {
-            throw new Error(data.error || `Backend lỗi ${response.status}`);
-        }
-
-        if (runId !== videoDetectionRunId) return;
-        if (!data.annotated_video_url) {
-            throw new Error("Backend không trả annotated_video_url");
-        }
-
-        clearCanvas();
-        stopOverlayLoop();
-        video.src = `${data.annotated_video_url}?t=${Date.now()}`;
-        video.hidden = false;
-        video.controls = true;
-        video.muted = true;
-        video.load();
-        await waitForVideoReady(video, 8000);
-        video.currentTime = 0;
-        video.play().catch(() => {});
-
-        const results = data.results || [];
-        renderAppearanceSummary(summaryFromVideoResults(results, data.processed_frames || data.total_frames));
-        renderObjectDetails(lastObjectsFromVideoResults(results));
-        applyModelStatus(data);
-        setStatus("Detect xong, đang phát video đã vẽ bbox");
-    } catch (error) {
-        if (runId !== videoDetectionRunId) return;
-        stopOverlayLoop();
-        clearCanvas();
-        showVideoPreview();
-        setStatus("Detect video lỗi");
-        alert(`Lỗi detection: ${error.message}`);
-    } finally {
-        if (runId === videoDetectionRunId) {
-            setBusy(button, false);
-        }
     }
 }
 
@@ -489,21 +375,6 @@ function fitContain(naturalWidth, naturalHeight, boxWidth, boxHeight) {
     };
 }
 
-function showVideoPreview() {
-    const video = byId("previewVideo");
-    if (videoObjectUrl && video.src !== videoObjectUrl) {
-        video.src = videoObjectUrl;
-        video.load();
-    }
-    video.hidden = false;
-    video.controls = activeMode !== "camera";
-    video.muted = true;
-}
-
-function resetVideoDetectionState() {
-    clearCanvas();
-}
-
 function stopAllRealtimeWork() {
     stopOverlayLoop();
     stopCameraDetection();
@@ -582,28 +453,6 @@ function summaryFromCounts(counts, total) {
         .sort((a, b) => b.appearance_percent - a.appearance_percent);
 }
 
-function summaryFromVideoResults(results, totalFrames) {
-    const counts = {};
-    const frameTotal = Number(totalFrames) || results.length || 0;
-    (results || []).forEach(result => {
-        const classes = new Set((result.objects || result.detections || [])
-            .map(item => item.class_name)
-            .filter(Boolean));
-        classes.forEach(className => {
-            counts[className] = (counts[className] || 0) + 1;
-        });
-    });
-    return summaryFromCounts(counts, frameTotal);
-}
-
-function lastObjectsFromVideoResults(results) {
-    for (let index = (results || []).length - 1; index >= 0; index -= 1) {
-        const objects = normalizeObjects(results[index].objects || results[index].detections || []);
-        if (objects.length) return objects;
-    }
-    return [];
-}
-
 function renderAppearanceSummary(summary) {
     const rows = (summary || []).filter(item => Number(item.appearance_percent) > SUMMARY_THRESHOLD);
     byId("summaryTotal").textContent = `Tổng số vật thể: ${rows.length}`;
@@ -665,11 +514,6 @@ function escapeHtml(value) {
 function waitForImageReady(image, timeoutMs) {
     if (image.complete && image.naturalWidth > 0) return Promise.resolve();
     return waitForEventOrTimeout(image, "load", timeoutMs);
-}
-
-function waitForVideoReady(video, timeoutMs) {
-    if (video.readyState >= 1 && video.videoWidth > 0) return Promise.resolve();
-    return waitForEventOrTimeout(video, "loadedmetadata", timeoutMs);
 }
 
 function waitForEventOrTimeout(target, eventName, timeoutMs) {
